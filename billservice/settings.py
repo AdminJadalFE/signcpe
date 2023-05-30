@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_yasg',
     'corsheaders',
     'cpeservice',
 ]
@@ -125,6 +126,4 @@ CORS_ALLOW_ALL_ORIGINS = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
-CORS_ALLOW_ALL_ORIGINS = True
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
