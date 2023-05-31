@@ -16,7 +16,7 @@ from zipfile import ZipFile
 from .serializers import GenerarCPESerializer
 from os.path import basename
 import qrcode
-
+import subprocess
 # Create your views here.
 
 
@@ -188,20 +188,51 @@ class GenerarCPEView(CreateAPIView):
                 # qr.make(fit=True)
                 # img = qr.make_image(fill_color="black", back_color="white")
                 # img.save(outputhash.replace('xml', 'jpg'))
+                script_path = os.path.abspath(__file__)
+                main_dir = os.path.dirname(script_path)
+                principal_dir = os.path.dirname(os.path.normpath(main_dir))
+
+                input_xml = output
+                output_pdf = principal_dir + "/asset/pdf/" + id + ".pdf"
+                fop_path = principal_dir + "/asset/fop/fop.bat"  # Ruta al ejecutable de FOP
+                xsl_fo = principal_dir + "/asset/xsl/dte_browser21.xsl"
+
+                command = f"{fop_path} -xml {input_xml} -xsl {xsl_fo} -pdf {output_pdf}"
+
+                print(command)
+
+                try:
+                    result = subprocess.run(
+                        command, shell=True, check=True, stderr=subprocess.PIPE)
+                    if result.returncode != 0:
+                        print(
+                            f"Error al ejecutar FOP. Código de salida: {result.returncode}")
+                        # Mostrar el mensaje de error detallado
+                        print(result.stderr.decode('utf-8'))
+                    else:
+                        print(f"PDF generado exitosamente en: {output_pdf}")
+                except subprocess.CalledProcessError as e:
+                    print(f"Error al ejecutar FOP: {e}")
 
                 with open(output.replace('xml', 'zip'), 'rb') as file:
                     zip_data = file.read()
-                    base64_data = base64.b64encode(zip_data).decode('utf-8')
+                    base64_xml = base64.b64encode(zip_data).decode('utf-8')
+
+                with open(output_pdf, 'rb') as file:
+                    pdf_data = file.read()
+                    base64_pdf = base64.b64encode(pdf_data).decode('utf-8')
 
                 print("Eliminando archivo UBL: " + output)
                 fs.delete(output)
                 fs.delete(output.replace('xml', 'zip'))
+                fs.delete(output_pdf)
                 # fs.delete(outputhash)
 
                 return Response({
                     'status': True,
                     'message': id,
-                    'content': base64_data
+                    'xml': base64_xml,
+                    'pdf': base64_pdf
                 }, status=200)
 
             else:
